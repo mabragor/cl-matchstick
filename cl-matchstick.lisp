@@ -164,3 +164,37 @@
 	 (symbol-macrolet ,(iter (for (key nil) in-hashtable vars)
 				 (collect `(,key (gethash ',key cap))))
 	   ,@body)))))
+
+(defmacro when-match (pattern thing &body body)
+  (once-only (thing)
+    (with-gensyms (g!-x)
+      (multiple-value-bind (code vars) (%codewalk-pattern pattern)
+	`(let ((cap (make-hash-table :test #'eq))
+	       (expr ,thing))
+	   (handler-case ,code
+	     (fail-match () nil)
+	     (:no-error (&rest ,g!-x)
+	       (declare (ignore ,g!-x))
+	       (symbol-macrolet ,(iter (for (key nil) in-hashtable vars)
+				       (collect `(,key (gethash ',key cap))))
+		 ,@body))))))))
+
+(defmacro ecase-match (thing &rest specs)
+  (once-only (thing)
+    (with-gensyms (g!-x g!-outer)
+      `(block ,g!-outer
+	 ,@(mapcar (lambda (spec)
+		     (destructuring-bind (pattern . body) spec
+		       (multiple-value-bind (code vars) (%codewalk-pattern pattern)
+			 `(let ((cap (make-hash-table :test #'eq))
+				(expr ,thing))
+			    (handler-case ,code
+			      (fail-match () nil)
+			      (:no-error (&rest ,g!-x)
+				(declare (ignore ,g!-x))
+				(symbol-macrolet ,(iter (for (key nil) in-hashtable vars)
+							(collect `(,key (gethash ',key cap))))
+				  (return-from ,g!-outer (progn ,@body)))))))))
+		   specs)))))
+      
+  
