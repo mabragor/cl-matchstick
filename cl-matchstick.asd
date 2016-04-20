@@ -5,15 +5,16 @@
   :author "Alexandr Popolitov <popolit@gmail.com>"
   :license "MIT"
   :serial t
+  :depends-on (#:alexandria #:iterate)
   :components ((:file "package")
                (:file "cl-matchstick")))
 
-(defsystem :cl-vhdl-tests
-  :description "Tests for CL-VHDL."
+(defsystem :cl-matchstick-tests
+  :description "Tests for CL-MATCHSTICK."
   :licence "MIT"
-  :depends-on (:cl-vhdl :fiveam :cl-interpol :optima :fare-quasiquote-optima)
+  :depends-on (#:cl-matchstick #:alexandria #:fiveam)
   :components ((:file "tests")))
 
-(defmethod perform ((op test-op) (sys (eql (find-system :cl-vhdl))))
-  (load-system :cl-vhdl-tests)
-  (funcall (intern "RUN-TESTS" :cl-vhdl-tests)))
+(defmethod perform ((op test-op) (sys (eql (find-system :cl-matchstick))))
+  (load-system :cl-matchstick-tests)
+  (funcall (intern "RUN-TESTS" :cl-matchstick-tests)))
