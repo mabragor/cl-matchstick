@@ -5,7 +5,7 @@
   :author "Alexandr Popolitov <popolit@gmail.com>"
   :license "MIT"
   :serial t
-  :depends-on (#:alexandria #:iterate)
+  :depends-on (#:alexandria #:iterate #:cl-ppcre)
   :components ((:file "package")
                (:file "cl-matchstick")))
 

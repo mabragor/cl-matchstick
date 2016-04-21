@@ -34,6 +34,15 @@ We also have other special forms:
 So far that's all special forms we have -- maybe more will be added once I figure out I need them
 for CL-VHDL project destructuring.
 
+Only a handful of atoms are supported in patterns now:
+  * if something is a keyword, it's matched using EQ
+  * if something is a symbol (but not a keyword) the corresponding symbol is bound
+    (using SYMBOL-MACROLET) inside the body of the macro
+  * additionally, if symbol-name is of the form name_predicate (i.e. contains underscore)
+    it's interpreted as a predicate test: subexpression should satisfy PREDICATE and if it
+    does, its value is bound to NAME inside body of the macro
+    (this notation is the same as in Wolfram Mathematica)
+
 Also, as of now, the code is poorly tested, but I hope this will quickly improve.
 
 We have three matching macros: WITH-MATCH, WHEN-MATCH and ECASE-MATCH.

@@ -17,6 +17,14 @@
     (unless (fiveam:results-status results)
       (error "Tests failed."))))
 
+(test trivial-patterns
+  (is (equal :ok (with-match _ '(1 2 3) :ok)))
+  (is (equal :ok (with-match _ 1 :ok)))
+  (is (equal :ok (with-match _listp '(1 2 3) :ok)))
+  (is (equal :ok (with-match _atom '1 :ok)))
+  (signals (fail-match) (with-match _atom '(1 2 3) :ok))
+  (signals (fail-match) (with-match _listp '1 :ok)))
+
 (test simple-patterns
   (is (equal '(3 2 1) (with-match (a b c) '(1 2 3) (list c b a))))
   (signals (fail-match) (with-match (a b) '(1 . 2) (list a b)))
