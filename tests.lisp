@@ -23,7 +23,10 @@
   (is (equal :ok (with-match _listp '(1 2 3) :ok)))
   (is (equal :ok (with-match _atom '1 :ok)))
   (signals (fail-match) (with-match _atom '(1 2 3) :ok))
-  (signals (fail-match) (with-match _listp '1 :ok)))
+  (signals (fail-match) (with-match _listp '1 :ok))
+  (is (equal 1 (with-match x_integerp '1 x)))
+  (is (equal 1 (with-match x '1 x))))
+
 
 (test simple-patterns
   (is (equal '(3 2 1) (with-match (a b c) '(1 2 3) (list c b a))))
