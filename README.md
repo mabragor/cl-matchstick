@@ -45,9 +45,15 @@ Only a handful of atoms are supported in patterns now:
 
 Also, as of now, the code is poorly tested, but I hope this will quickly improve.
 
-We have three matching macros: WITH-MATCH, WHEN-MATCH and ECASE-MATCH.
-WITH-MATCH throws FAIL-MATCH error, if match failed, WHEN-MATCH returns NIL and doesn't execute
-its body, ECASE-MATCH consists of a number of specs -- it tries to match each spec in turn and
-throws FAIL-MATCH only if all matches failed.
+We have following matching macros:
+  * WITH-MATCH pattern thing &body body -- tries to match THING against PATTERN, if it succeeds,
+    body is executed with variables inside pattern bound to parts of expression. If it fails,
+    FAIL-MATCH error is thrown
+  * WHEN-MATCH pattern thing &body body -- like WITH-MATCH, but on failure quietly returns NIL,
+    without throwing anything
+  * ECASE-MATCH thing &rest specs -- like repeated WITH-MATCH. First element of each element of SPECS
+    is a pattern, that tries to be matched against. On success, the corresponding "body" is executed.
+    On failure, subsequent clauses are tried. If none matches, FAIL-MATCH is thrown.
+  * MATCH-P pattern thing -- simply returns T if THING matches PATTERN, NIL otherwise.
 
 Again, for examples of usage see CL-VHDL, emitting branch (and hopefully soon master branch as well).

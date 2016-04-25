@@ -40,3 +40,7 @@
 (test match-keywords
   (is (equal 3 (with-match (:a a) '(:a 3) a)))
   (signals (fail-match) (with-match (:a a) '(:b 3) a)))
+
+(test match-p
+  (is (equal t (match-p (:a a) '(:a 3))))
+  (is (equal nil (match-p (:a a) '(:b 3)))))

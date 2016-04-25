@@ -210,3 +210,5 @@
 		   specs)))))
       
   
+(defmacro match-p (pattern thing)
+  `(when-match ,pattern ,thing t))
