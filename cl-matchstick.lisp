@@ -10,12 +10,16 @@
 
 (defun codewalk-pattern-at-the-car (pattern)
   (case (car pattern)
-    (or `(block outer
-	   ,@(mapcar (lambda (x)
-		       `(handler-case ,(codewalk-pattern x t)
-			  (:no-error () (return-from outer expr)))) ; short-circuit
-		     (cdr pattern))
-	   (fail-match)))
+    (or (with-gensyms (g!-outer)
+	  `(block ,g!-outer
+	     ,@(mapcar (lambda (x)
+			 `(handler-case ,(codewalk-pattern x t)
+			    (fail-match () nil)
+			    (:no-error (&rest rest)
+			      (declare (ignore rest))
+			      (return-from ,g!-outer expr)))) ; short-circuit
+		       (cdr pattern))
+	     (fail-match))))
     (len `(progn (if (not (and (listp expr))
 			  (equal ,(second pattern) (length expr)))
 		     (fail-match))
@@ -48,12 +52,13 @@
 		       ,(codewalk-pattern (second pattern) t)))
 	  (car `(progn (rebind-expr-car)
 		       ,(codewalk-pattern (second pattern) t)))
-	  (cap `(setf (gethash ',(second pattern) cap)
-		      ,(codewalk-list-subpattern (third pattern))))
+	  (cap (progn (setf (gethash (second  pattern) *vars*) t)
+		      `(setf (gethash ',(second pattern) cap)
+			     ,(codewalk-list-subpattern (third pattern)))))
 	  (t `(progn (rebind-expr-next)
-		     ,(codewalk-pattern pattern))))
+		     ,(codewalk-pattern pattern t))))
 	`(progn (rebind-expr-next)
-		,(codewalk-pattern pattern)))))
+		,(codewalk-pattern pattern t)))))
 
 (defvar *vars*)
 
@@ -183,6 +188,7 @@
       (multiple-value-bind (code vars) (%codewalk-pattern pattern)
 	`(let ((cap (make-hash-table :test #'eq))
 	       (expr ,thing))
+	   (declare (ignorable cap expr))
 	   (handler-case ,code
 	     (fail-match () nil)
 	     (:no-error (&rest ,g!-x)
@@ -200,6 +206,7 @@
 		       (multiple-value-bind (code vars) (%codewalk-pattern pattern)
 			 `(let ((cap (make-hash-table :test #'eq))
 				(expr ,thing))
+			    (declare (ignorable cap expr))
 			    (handler-case ,code
 			      (fail-match () nil)
 			      (:no-error (&rest ,g!-x)
@@ -207,7 +214,8 @@
 				(symbol-macrolet ,(iter (for (key nil) in-hashtable vars)
 							(collect `(,key (gethash ',key cap))))
 				  (return-from ,g!-outer (progn ,@body)))))))))
-		   specs)))))
+		   specs)
+	 (fail-match)))))
       
   
 (defmacro match-p (pattern thing)

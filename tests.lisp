@@ -44,3 +44,29 @@
 (test match-p
   (is (equal t (match-p (:a a) '(:a 3))))
   (is (equal nil (match-p (:a a) '(:b 3)))))
+
+(defun ecase-match-fun (x)
+  (ecase-match x (:a 1) (:b 2)))
+  
+(test ecase-match
+  (is (equal 1 (ecase-match-fun :a)))
+  (is (equal 2 (ecase-match-fun :b)))
+  (signals (fail-match) (ecase-match-fun :c)))
+
+(defun or-fun (x)
+  (with-match ((or :to :downto) x y) x
+    (list x :smth y)))
+
+(test or 
+  (is (equal '(1 :smth 2) (or-fun '(:to 1 2))))
+  (is (equal '(1 :smth 2) (or-fun '(:downto 1 2))))
+  (signals (fail-match) (or-fun '(:caboom! 1 2))))
+
+(defun cap-fun (x)
+  (with-match ((cap dir (or :to :downto)) x y) x
+    (list x dir y)))
+
+(test cap
+  (is (equal '(1 :to 2) (cap-fun '(:to 1 2))))
+  (is (equal '(1 :downto 2) (cap-fun '(:downto 1 2))))
+  (signals (fail-match) (cap-fun '(:caboom! 1 2))))
