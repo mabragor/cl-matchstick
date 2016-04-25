@@ -70,3 +70,7 @@
   (is (equal '(1 :to 2) (cap-fun '(:to 1 2))))
   (is (equal '(1 :downto 2) (cap-fun '(:downto 1 2))))
   (signals (fail-match) (cap-fun '(:caboom! 1 2))))
+
+(test quote
+  (is (equal 1 (ecase-match 1 ('1 1))))
+  (signals (fail-match) (ecase-match 2 ('1 1))))

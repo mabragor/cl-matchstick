@@ -6,5 +6,6 @@
   (:shadowing-import-from #:cl-ppcre #:split)
   (:export #:with-match #:when-match #:ecase-match #:fail-match
 	   #:match-p
-	   #:or #:len #:not #:collect-until #:collect-while #:maybe #:cdr #:car #:cap))
+	   ;; #:or #:len #:not #:collect-until #:collect-while #:maybe #:cdr #:car #:cap
+	   ))
 

@@ -30,6 +30,7 @@ We also have other special forms:
   * (COLLECT-WHILE subpattern) -- greedily consume elements of the list, as long as they match the pattern
   * (COLLECT-UNTIL subpattern) -- shortcut to (COLLECT-WHILE (NOT subpattern))
   * (CAP name subpattern) -- "capture" value of subpattern in a name (becomes visible inside the body)
+  * (QUOTE smth) -- compares smth with expression using EQUAL
 
 So far that's all special forms we have -- maybe more will be added once I figure out I need them
 for CL-VHDL project destructuring.
@@ -57,3 +58,10 @@ We have following matching macros:
   * MATCH-P pattern thing -- simply returns T if THING matches PATTERN, NIL otherwise.
 
 Again, for examples of usage see CL-VHDL, emitting branch (and hopefully soon master branch as well).
+
+Gotchas:
+
+  * codewalking of special forms (COLLECT-UNTIL, CDR etc) is done via comparing names of symbols
+    using STRING=, not symbols themselves. This is done so as not to export names like "CDR" --
+    this causes name-conflicts all the time. Thus, if symbol is in any package (except KEYWORD) and
+    STRING= to CDR, then it's treated as a "special" form inside the pattern.
