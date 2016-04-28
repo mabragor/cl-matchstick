@@ -74,7 +74,7 @@
 		    ((v car) `(progn (rebind-expr-car)
 				 ,(codewalk-pattern (second pattern) t)))
 		    ((v cap) (progn (setf (gethash (second  pattern) *vars*) t)
-				`(setf (gethash ',(second pattern) cap)
+				`(setf (recap ,(second pattern))
 				       ,(codewalk-list-subpattern (third pattern)))))
 		    (t (default)))))
 	  (default)))))
@@ -96,12 +96,39 @@
 						   (fail-match))
 						 ,(if (not (string= "" (car lst)))
 						      (progn (setf (gethash (intern (car lst)) *vars*) t)
-							     `(setf (gethash ',(intern (car lst)) cap) expr))
+							     `(setf (recap ,(intern (car lst))) expr))
 						      'expr)))
 				     (progn (setf (gethash pattern *vars*) t)
-					    `(setf (gethash ',pattern cap) expr))))
+					    `(setf (recap ,pattern) expr))))
 			       'expr))
 	(t (error "Don't know how to codewalk this atomic pattern"))))
+
+(defvar cap nil)
+
+(defmacro capture-layer (&body body)
+  `(let ((cap (cons (make-hash-table :test #'eq) cap)))
+     ,@body))
+
+(defmacro recap (var)
+  `(lookup ',var cap))
+
+(defun lookup (symbol env)
+  (if (null env)
+      (symbol-value symbol) ; here we glue to CLs variables
+      (multiple-value-bind (val got) (gethash symbol (car env))
+	(if got
+	    val
+	    (lookup symbol (cdr env))))))
+
+(define-setf-expander recap (sym)
+  (if (not (symbolp sym))
+      (error "Recap can be only of (unevaluated) symbol."))
+  (with-gensyms (g!-new-val)
+    (values nil
+	    nil
+	    `(,g!-new-val)
+	    `(setf (gethash ',sym (car cap)) ,g!-new-val)
+	    `(recap ,sym))))
 
 (defun codewalk-cons-pattern (pattern)
   (with-gensyms (g!-expr-iter)
@@ -193,28 +220,28 @@
 (defmacro with-match (pattern thing &body body)
   (once-only (thing)
     (multiple-value-bind (code vars) (%codewalk-pattern pattern)
-      `(let ((cap (make-hash-table :test #'eq))
-	     (expr ,thing))
-	 (declare (ignorable cap expr))
-	 ,code
-	 (symbol-macrolet ,(iter (for (key nil) in-hashtable vars)
-				 (collect `(,key (gethash ',key cap))))
-	   ,@body)))))
+      `(capture-layer
+	(let ((expr ,thing))
+	  (declare (ignorable expr))
+	  ,code
+	  (symbol-macrolet ,(iter (for (key nil) in-hashtable vars)
+				  (collect `(,key (recap ,key))))
+	    ,@body))))))
 
 (defmacro when-match (pattern thing &body body)
   (once-only (thing)
     (with-gensyms (g!-x)
       (multiple-value-bind (code vars) (%codewalk-pattern pattern)
-	`(let ((cap (make-hash-table :test #'eq))
-	       (expr ,thing))
-	   (declare (ignorable cap expr))
-	   (handler-case ,code
-	     (fail-match () nil)
-	     (:no-error (&rest ,g!-x)
-	       (declare (ignore ,g!-x))
-	       (symbol-macrolet ,(iter (for (key nil) in-hashtable vars)
-				       (collect `(,key (gethash ',key cap))))
-		 ,@body))))))))
+	`(capture-layer 
+	  (let ((expr ,thing))
+	    (declare (ignorable expr))
+	    (handler-case ,code
+	      (fail-match () nil)
+	      (:no-error (&rest ,g!-x)
+		(declare (ignore ,g!-x))
+		(symbol-macrolet ,(iter (for (key nil) in-hashtable vars)
+					(collect `(,key (recap ,key))))
+		  ,@body)))))))))
 
 (defmacro ecase-match (thing &rest specs)
   (once-only (thing)
@@ -223,16 +250,16 @@
 	 ,@(mapcar (lambda (spec)
 		     (destructuring-bind (pattern . body) spec
 		       (multiple-value-bind (code vars) (%codewalk-pattern pattern)
-			 `(let ((cap (make-hash-table :test #'eq))
-				(expr ,thing))
-			    (declare (ignorable cap expr))
-			    (handler-case ,code
-			      (fail-match () nil)
-			      (:no-error (&rest ,g!-x)
-				(declare (ignore ,g!-x))
-				(symbol-macrolet ,(iter (for (key nil) in-hashtable vars)
-							(collect `(,key (gethash ',key cap))))
-				  (return-from ,g!-outer (progn ,@body)))))))))
+			 `(capture-layer
+			   (let ((expr ,thing))
+			     (declare (ignorable expr))
+			     (handler-case ,code
+			       (fail-match () nil)
+			       (:no-error (&rest ,g!-x)
+				 (declare (ignore ,g!-x))
+				 (symbol-macrolet ,(iter (for (key nil) in-hashtable vars)
+							 (collect `(,key (recap ,key))))
+				   (return-from ,g!-outer (progn ,@body))))))))))
 		   specs)
 	 (fail-match)))))
       

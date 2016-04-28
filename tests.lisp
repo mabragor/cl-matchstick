@@ -74,3 +74,12 @@
 (test quote
   (is (equal 1 (ecase-match 1 ('1 1))))
   (signals (fail-match) (ecase-match 2 ('1 1))))
+
+(test nested-matches
+  (is (equal '((2 3) 1 (2 3))
+	     (with-match (x y) '(1 (2 3))
+	       (list (with-match (x y) y
+		       (list x y))
+		     x y)))))
+
+  
