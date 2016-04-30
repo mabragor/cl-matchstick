@@ -12,6 +12,10 @@
   (and (symbolp x)
        (not (keywordp x))))
 
+(defun shallow-listp (x)
+  (or (consp x)
+      (null x)))
+
 ;; The whole idea is to successfully compare with symbols in all packages
 ;; If we don't do like that, we occasionally cause name-conflicts when exporting these symbols
 ;; (for example, with ESRAP-LIQUID)
@@ -65,10 +69,12 @@
 							(fail-match () (rebind-expr-prev) (terminate)))
 						      ,g!-res))
 					  (nreverse ,g!-res)))
-		    ((v maybe) `(progn (handler-case (rebind-expr-next)
-					 (fail-match () nil))
-				       (handler-case ,(codewalk-pattern (second pattern) t)
-					 (fail-match () (rebind-expr-prev)))))
+		    ((v maybe) (with-gensyms (g!-block)
+				 `(block ,g!-block
+				    (handler-case (rebind-expr-next)
+				      (fail-match () (return-from ,g!-block nil)))
+				    (handler-case ,(codewalk-pattern (second pattern) t)
+				      (fail-match () (rebind-expr-prev) nil)))))
 		    ((v cdr) `(progn (rebind-expr-cdr)
 				 ,(codewalk-pattern (second pattern) t)))
 		    ((v car) `(progn (rebind-expr-car)
@@ -132,7 +138,7 @@
 
 (defun codewalk-cons-pattern (pattern)
   (with-gensyms (g!-expr-iter)
-    `(progn (when (not (consp expr))
+    `(progn (when (not (shallow-listp expr))
 	      (fail-match))
 	    (let ((,g!-expr-iter (mk-expr-iter expr)))
 	      (macrolet ((rebind-expr-car () `(setf expr (funcall ,',g!-expr-iter :car)))

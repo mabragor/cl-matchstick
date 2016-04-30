@@ -82,4 +82,14 @@
 		       (list x y))
 		     x y)))))
 
+(defun cap-maybe-fun (x)
+  (with-match ((cap on (maybe (:on _)))
+	       (cap until (maybe (:until _)))) x
+    (list on until)))
+
+(test maybe
+  (is (equal '(nil (:until 2)) (cap-maybe-fun '((:until 2)))))
+  (is (equal '((:on 1) nil) (cap-maybe-fun '((:on 1)))))
+  (is (equal '((:on 1) (:until 2)) (cap-maybe-fun '((:on 1) (:until 2)))))
+  (is (equal '(nil nil) (cap-maybe-fun nil))))
   
