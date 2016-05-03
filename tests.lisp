@@ -73,7 +73,13 @@
 
 (test quote
   (is (equal 1 (ecase-match 1 ('1 1))))
-  (signals (fail-match) (ecase-match 2 ('1 1))))
+  (signals (fail-match) (ecase-match 2 ('1 1)))
+  (is (equal :ok (with-match 't t :ok)))
+  (signals (fail-match) (with-match 'a t :ok))
+  (is (equal '(t a b c) (with-match (:a (cap thing ('t (cdr _)))) '(:a (t a b c))
+  			  thing)))
+  )
+
 
 (test nested-matches
   (is (equal '((2 3) 1 (2 3))
@@ -93,3 +99,4 @@
   (is (equal '((:on 1) (:until 2)) (cap-maybe-fun '((:on 1) (:until 2)))))
   (is (equal '(nil nil) (cap-maybe-fun nil))))
   
+
