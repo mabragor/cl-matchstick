@@ -44,7 +44,9 @@
 				   expr))
 		  ((v not) `(handler-case ,(codewalk-pattern (second pattern) t)
 			      (fail-match () expr)
-			      (:no-error () (fail-match))))
+			      (:no-error (&rest rest)
+				(declare (ignore rest))
+				(fail-match))))
 		  ((v quote) `(if (equal ',(second pattern) expr)
 				  expr
 				  (fail-match)))

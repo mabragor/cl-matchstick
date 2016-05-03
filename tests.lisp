@@ -99,4 +99,6 @@
   (is (equal '((:on 1) (:until 2)) (cap-maybe-fun '((:on 1) (:until 2)))))
   (is (equal '(nil nil) (cap-maybe-fun nil))))
   
-
+(test not
+  (is (equal :ok (with-match (not :a) :b :ok)))
+  (signals (fail-match) (with-match (not :a) :a :ok)))
