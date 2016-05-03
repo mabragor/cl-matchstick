@@ -102,3 +102,12 @@
 (test not
   (is (equal :ok (with-match (not :a) :b :ok)))
   (signals (fail-match) (with-match (not :a) :a :ok)))
+
+(test collect-while
+  (is (equal '((a 1) (a 2) (a 3)) (with-match ((cap x (collect-while ('a _))) (cdr _)) '((a 1) (a 2) (a 3) (b 1))
+				    x))))
+
+
+(test collect-until
+  (is (equal '((b 1) (c 2) (d 3)) (with-match ((cap x (collect-until ('a _))) (cdr _)) '((b 1) (c 2) (d 3) (a 1))
+				    x))))
